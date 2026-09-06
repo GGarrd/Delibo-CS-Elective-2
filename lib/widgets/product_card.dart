@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/product.dart';
 
-// StatelessWidget: a single product card's display never changes after being built
+// StatelessWidget: a product card's display never changes after being built
 class ProductCard extends StatelessWidget {
   final Product product;
 
@@ -11,23 +11,19 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
-      // Navigation 2.0: navigate to product detail using go_router
       onTap: () => context.push('/product/${product.id}'),
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Product image (emoji on colored background) ──────────────────
+            // Product image (emoji on colored background)
             Container(
               width: double.infinity,
               height: 110,
-              color: isDark
-                  ? product.bgColor.withOpacity(0.3)
-                  : product.bgColor,
+              color: product.bgColor,
               child: Center(
                 child: Text(
                   product.emoji,
@@ -36,7 +32,7 @@ class ProductCard extends StatelessWidget {
               ),
             ),
 
-            // ── Product info ─────────────────────────────────────────────────
+            // Product info
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
@@ -47,9 +43,7 @@ class ProductCard extends StatelessWidget {
                     // Product name
                     Text(
                       product.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 13,
-                      ),
+                      style: theme.textTheme.titleMedium?.copyWith(fontSize: 13),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -62,8 +56,7 @@ class ProductCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: product.bgColor.withOpacity(
-                                isDark ? 0.25 : 0.5),
+                            color: product.bgColor.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -77,14 +70,13 @@ class ProductCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
 
-                        // Price
+                        // Price — uses colorScheme.tertiary (defined in AppTheme)
+                        // No isDark check needed: tertiary is darkBrown in light, bananaYellow in dark
                         Text(
                           '₱${product.price.toStringAsFixed(0)}',
                           style: theme.textTheme.labelLarge?.copyWith(
                             fontSize: 15,
-                            color: isDark
-                                ? const Color(0xFFFFD600)
-                                : const Color(0xFF3E2000),
+                            color: theme.colorScheme.tertiary,
                           ),
                         ),
                       ],

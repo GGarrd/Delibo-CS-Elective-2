@@ -1,36 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../data/products.dart';
 import '../main.dart';
 import '../widgets/product_card.dart';
 
-// StatelessWidget: home screen layout doesn't change based on user interaction
-// (theme toggle is managed at the app level, not here)
+// StatelessWidget: home layout never changes based on user interaction
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final app = BananaShopApp.of(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cartCount = app.cartCount;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('🍌 Banana Mart'),
         actions: [
-          // Light/dark mode toggle — accessible from AppBar as required
+          // Cart icon with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_rounded),
+                onPressed: () => context.push('/cart'),
+                tooltip: 'View cart',
+              ),
+              if (cartCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$cartCount',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          // Light/dark mode toggle
           IconButton(
             icon: Icon(
               isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
             ),
             tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
-            onPressed: () => BananaShopApp.of(context).toggleTheme(),
+            onPressed: () => app.toggleTheme(),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
       ),
       body: LayoutBuilder(
         // Responsive: LayoutBuilder detects available width
         builder: (context, constraints) {
-          // 2 columns on phones, 3+ columns on tablets
+          // 2 columns on phones, 3 columns on tablets
           final columns = constraints.maxWidth >= 600 ? 3 : 2;
 
           return GridView.builder(

@@ -3,16 +3,15 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  // ── Brand colors ─────────────────────────────────────────────────────────────
-  static const bananaYellow  = Color(0xFFFFD600);
-  static const monkeyBrown   = Color(0xFF5D4037);
-  static const darkBrown     = Color(0xFF3E2000);
-  static const creamBg       = Color(0xFFFFFDE7);
-  static const darkBg        = Color(0xFF1C1000);
-  static const darkSurface   = Color(0xFF2C1A00);
-  static const darkOnSurface = Color(0xFFFFF9C4);
+  static const bananaYellow = Color(0xFFFFD600);
+  static const monkeyBrown  = Color(0xFF5D4037);
+  static const darkBrown    = Color(0xFF3E2000);
+  static const creamBg      = Color(0xFFFFFDE7);
+  static const darkBg       = Color(0xFF1C1000);
+  static const darkSurface  = Color(0xFF2C1A00);
+  static const darkText     = Color(0xFFFFF9C4);
 
-  // ── Light Theme ───────────────────────────────────────────────────────────────
+  // ── Light Theme ───────────────────────────────────────────────────────────
   static final ThemeData light = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -23,11 +22,12 @@ class AppTheme {
       onPrimary: darkBrown,
       secondary: monkeyBrown,
       onSecondary: Colors.white,
+      // tertiary = accent text color (price, highlights) in light mode
+      tertiary: darkBrown,
       surface: Colors.white,
       onSurface: darkBrown,
     ),
     scaffoldBackgroundColor: creamBg,
-
     appBarTheme: const AppBarTheme(
       backgroundColor: bananaYellow,
       foregroundColor: darkBrown,
@@ -40,28 +40,21 @@ class AppTheme {
       ),
       iconTheme: IconThemeData(color: darkBrown),
     ),
-
     cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 3,
       shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: bananaYellow,
         foregroundColor: darkBrown,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),
     ),
-
     textTheme: const TextTheme(
       titleLarge:  TextStyle(fontWeight: FontWeight.bold, color: darkBrown),
       titleMedium: TextStyle(fontWeight: FontWeight.w600, color: darkBrown),
@@ -71,7 +64,7 @@ class AppTheme {
     ),
   );
 
-  // ── Dark Theme ────────────────────────────────────────────────────────────────
+  // ── Dark Theme ────────────────────────────────────────────────────────────
   static final ThemeData dark = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -81,11 +74,12 @@ class AppTheme {
       primary: bananaYellow,
       onPrimary: darkBrown,
       secondary: const Color(0xFFFFE57F),
+      // tertiary = accent text color (price, highlights) in dark mode
+      tertiary: bananaYellow,
       surface: darkSurface,
-      onSurface: darkOnSurface,
+      onSurface: darkText,
     ),
     scaffoldBackgroundColor: darkBg,
-
     appBarTheme: const AppBarTheme(
       backgroundColor: darkSurface,
       foregroundColor: bananaYellow,
@@ -98,33 +92,26 @@ class AppTheme {
       ),
       iconTheme: IconThemeData(color: bananaYellow),
     ),
-
     cardTheme: CardThemeData(
       color: darkSurface,
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: bananaYellow,
         foregroundColor: darkBrown,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),
     ),
-
     textTheme: const TextTheme(
-      titleLarge:  TextStyle(fontWeight: FontWeight.bold, color: darkOnSurface),
-      titleMedium: TextStyle(fontWeight: FontWeight.w600, color: darkOnSurface),
-      bodyLarge:   TextStyle(color: darkOnSurface),
+      titleLarge:  TextStyle(fontWeight: FontWeight.bold, color: darkText),
+      titleMedium: TextStyle(fontWeight: FontWeight.w600, color: darkText),
+      bodyLarge:   TextStyle(color: darkText),
       bodyMedium:  TextStyle(color: Color(0xFFFFE57F)),
-      labelLarge:  TextStyle(fontWeight: FontWeight.bold, color: darkOnSurface),
+      labelLarge:  TextStyle(fontWeight: FontWeight.bold, color: darkText),
     ),
   );
 }
