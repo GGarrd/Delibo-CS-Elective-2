@@ -4,8 +4,8 @@ import '../models/product.dart';
 const products = [
   Product(
     id: '1',
-    name: 'Fresh Cavendish Bananas',
-    description: 'Sweet and ripe Cavendish bananas, perfect for eating fresh or blending into smoothies. Sold per kilo.',
+    name: 'Fresh Lakatan Bananas',
+    description: 'Sweet and ripe Lakatan bananas, perfect for eating fresh or blending into smoothies. Sold per kilo.',
     price: 49,
     emoji: '🍌',
     bgColor: Color(0xFFFFF176),
