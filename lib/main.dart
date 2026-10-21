@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'provider/pokemon_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'page/pokedex_screen.dart';
 
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => PokemonProvider()..fetchPokemonList(),
-      child: const MyApp(),
-    ),
-  );
+  // ProviderScope stores the state of every provider in the app.
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +20,6 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.red,
       ),
-      // 3. Updated home to match your PokedexScreen class name
       home: const PokedexScreen(),
     );
   }

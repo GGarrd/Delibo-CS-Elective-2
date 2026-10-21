@@ -1,87 +1,109 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../provider/pokemon_provider.dart';
+import '../state/pokemon_list_notifier.dart';
+import '../state/type_filter_notifier.dart';
+import '../widgets/favorites_panel.dart';
 import '../widgets/pokemon_card.dart';
 import '../widgets/state_message.dart';
+import '../widgets/type_chip.dart';
+import '../widgets/type_filter_bar.dart';
 
-class PokedexScreen extends StatefulWidget {
+/// No initState fetch is needed anymore: watching pokemonListProvider
+/// triggers the notifier's build(), which loads the list.
+class PokedexScreen extends ConsumerWidget {
   const PokedexScreen({super.key});
 
   @override
-  State<PokedexScreen> createState() => _PokedexScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncPokemon = ref.watch(filteredPokemonProvider);
+    final selectedType = ref.watch(typeFilterProvider);
+    final isRefreshing = asyncPokemon.isLoading && asyncPokemon.hasValue;
 
-class _PokedexScreenState extends State<PokedexScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Safely trigger API request after initial widget tree finishes building
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<PokemonProvider>();
-      if (provider.status == PokemonStatus.initial) {
-        provider.fetchPokemonList();
-      }
-    });
-  }
+    // Every refresh path calls the same fetch method on the notifier.
+    Future<void> refresh() =>
+        ref.read(pokemonListProvider.notifier).fetchPokemonList();
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pokédex (Top 30)'),
         centerTitle: true,
         actions: [
+          const FavoritesPanelButton(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
-            onPressed: () {
-              context.read<PokemonProvider>().fetchPokemonList();
-            },
+            onPressed: refresh,
           ),
         ],
+        bottom: isRefreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(4),
+                child: LinearProgressIndicator(),
+              )
+            : null,
       ),
-      body: Consumer<PokemonProvider>(
-        builder: (context, provider, child) {
-          if (provider.status == PokemonStatus.initial ||
-              provider.status == PokemonStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.status == PokemonStatus.error) {
-            return StateMessage(
-              icon: Icons.error_outline,
-              message: 'Error fetching data.\n${provider.errorMessage}',
-              actionLabel: 'Retry',
-              onAction: () => provider.fetchPokemonList(),
-            );
-          }
-
-          if (provider.pokemonList.isEmpty) {
-            return StateMessage(
-              icon: Icons.catching_pokemon,
-              message: 'No Pokémon found.',
-              actionLabel: 'Refresh',
-              onAction: () => provider.fetchPokemonList(),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => provider.fetchPokemonList(),
-            child: GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.85,
+      body: Column(
+        children: [
+          const FavoritesPanel(),
+          const TypeFilterBar(),
+          Expanded(
+            child: asyncPokemon.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => StateMessage(
+                icon: Icons.error_outline,
+                message: 'Could not load Pokémon.\n'
+                    'Check your internet connection and try again.\n\n$error',
+                actionLabel: 'Retry',
+                onAction: refresh,
               ),
-              itemCount: provider.pokemonList.length,
-              itemBuilder: (context, index) =>
-                  PokemonCard(pokemon: provider.pokemonList[index]),
+              data: (pokemonList) {
+                if (pokemonList.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: refresh,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        const SizedBox(height: 80),
+                        StateMessage(
+                          icon: Icons.catching_pokemon,
+                          message: selectedType == null
+                              ? 'No Pokémon found.'
+                              : 'No ${capitalize(selectedType)}-type Pokémon in this list.',
+                          actionLabel:
+                              selectedType == null ? 'Refresh' : 'Clear filter',
+                          onAction: selectedType == null
+                              ? refresh
+                              : () => ref
+                                  .read(typeFilterProvider.notifier)
+                                  .clearFilter(),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: refresh,
+                  child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.72,
+                    ),
+                    itemCount: pokemonList.length,
+                    itemBuilder: (context, index) =>
+                        PokemonCard(pokemon: pokemonList[index]),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

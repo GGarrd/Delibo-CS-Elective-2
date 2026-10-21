@@ -2,11 +2,13 @@ class Pokemon {
   final int id;
   final String name;
   final String imageUrl;
+  final List<String> types;
 
-  Pokemon({
+  const Pokemon({
     required this.id,
     required this.name,
     required this.imageUrl,
+    required this.types,
   });
 
   String get displayId => '#${id.toString().padLeft(3, '0')}';
@@ -15,26 +17,25 @@ class Pokemon {
       ? '${name[0].toUpperCase()}${name.substring(1)}'
       : name;
 
-  factory Pokemon.fromApiJson(Map<String, dynamic> json) {
-    final String url = json['url'] as String;
-    // Extract ID from PokéAPI URL format: ".../pokemon/{id}/"
-    final List<String> segments = url.trim().split('/').where((s) => s.isNotEmpty).toList();
-    final int id = int.parse(segments.last);
-
-    // Capitalize the first letter of the name for cleaner UI
+  /// Builds a Pokémon from the detail endpoint: https://pokeapi.co/api/v2/pokemon/{id}
+  /// The list endpoint only gives name + url, so the detail call is what
+  /// provides the real type data used by the type filter.
+  factory Pokemon.fromDetailJson(Map<String, dynamic> json) {
+    final int id = json['id'] as int;
     final String rawName = json['name'] as String;
-    final String formattedName = rawName.isNotEmpty
-        ? rawName[0].toUpperCase() + rawName.substring(1)
-        : rawName;
 
-    // Use official artwork sprite URL based on Pokemon ID
+    final List<String> types = (json['types'] as List<dynamic>)
+        .map((t) => (t['type']['name'] as String))
+        .toList();
+
     final String imageUrl =
         'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png';
 
     return Pokemon(
       id: id,
-      name: formattedName,
+      name: rawName,
       imageUrl: imageUrl,
+      types: types,
     );
   }
 }

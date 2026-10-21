@@ -1,30 +1,70 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_application_1/main.dart';
+import 'package:flutter_application_1/services/pokemon.dart';
+import 'package:flutter_application_1/state/favorites_notifier.dart';
+import 'package:flutter_application_1/state/nickname_notifier.dart';
+import 'package:flutter_application_1/state/pokemon_list_notifier.dart';
+import 'package:flutter_application_1/state/type_filter_notifier.dart';
+
+/// Replaces the API call with fixed data so the tests run offline.
+class FakePokemonListNotifier extends PokemonListNotifier {
+  @override
+  Future<List<Pokemon>> build() async => const [
+        Pokemon(id: 1, name: 'bulbasaur', imageUrl: '', types: ['grass', 'poison']),
+        Pokemon(id: 4, name: 'charmander', imageUrl: '', types: ['fire']),
+        Pokemon(id: 7, name: 'squirtle', imageUrl: '', types: ['water']),
+      ];
+}
+
+ProviderContainer makeContainer() {
+  final container = ProviderContainer(
+    overrides: [
+      pokemonListProvider.overrideWith(FakePokemonListNotifier.new),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container;
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('nickname can be set, edited and removed', () {
+    final container = makeContainer();
+    final nicknames = container.read(nicknameProvider.notifier);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    nicknames.setNickname(1, 'Bulby');
+    expect(container.read(nicknameProvider)[1], 'Bulby');
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    nicknames.setNickname(1, 'Seedy');
+    expect(container.read(nicknameProvider)[1], 'Seedy');
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    nicknames.removeNickname(1);
+    expect(container.read(nicknameProvider).containsKey(1), isFalse);
+  });
+
+  test('toggling a favorite adds and removes it', () async {
+    final container = makeContainer();
+    await container.read(pokemonListProvider.future);
+    final favorites = container.read(favoritesProvider.notifier);
+
+    favorites.toggleFavorite(4);
+    expect(container.read(favoritePokemonProvider).map((p) => p.id), [4]);
+
+    favorites.toggleFavorite(4);
+    expect(container.read(favoritePokemonProvider), isEmpty);
+  });
+
+  test('type filter shows only matching Pokémon and can be cleared', () async {
+    final container = makeContainer();
+    await container.read(pokemonListProvider.future);
+
+    container.read(typeFilterProvider.notifier).selectType('fire');
+    expect(
+      container.read(filteredPokemonProvider).value!.map((p) => p.id),
+      [4],
+    );
+
+    container.read(typeFilterProvider.notifier).clearFilter();
+    expect(container.read(filteredPokemonProvider).value!.length, 3);
   });
 }
