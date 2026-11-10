@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'data/products.dart';
-import 'models/cart_item.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config/supabase_config.dart';
 import 'models/product.dart';
+import 'models/cart_item.dart';
 import 'screens/cart_screen.dart';
 import 'screens/checkout_screen.dart';
 import 'screens/home_screen.dart';
@@ -19,8 +20,8 @@ final _router = GoRouter(
     GoRoute(
       path: '/product/:id',
       builder: (context, state) {
-        final id = state.pathParameters['id']!;
-        final product = products.firstWhere((p) => p.id == id);
+        // Product is passed as extra to avoid re-fetching from Supabase
+        final product = state.extra as Product;
         return ProductDetailScreen(product: product);
       },
     ),
@@ -35,7 +36,17 @@ final _router = GoRouter(
   ],
 );
 
-void main() => runApp(const BananaShopApp());
+// ── App entry point: initialise Supabase before runApp ────────────────────────
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url:    SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
+
+  runApp(const BananaShopApp());
+}
 
 // ── StatefulWidget: manages theme mode and cart state for the entire app ──────
 class BananaShopApp extends StatefulWidget {
@@ -63,19 +74,17 @@ class _BananaShopAppState extends State<BananaShopApp> {
   final List<CartItem> _cart = [];
 
   List<CartItem> get cartItems => List.unmodifiable(_cart);
-
-  int get cartCount => _cart.fold(0, (sum, item) => sum + item.quantity);
-
-  double get cartTotal => _cart.fold(0.0, (sum, item) => sum + item.subtotal);
+  int    get cartCount => _cart.fold(0, (sum, i) => sum + i.quantity);
+  double get cartTotal => _cart.fold(0.0, (sum, i) => sum + i.subtotal);
 
   bool isInCart(String productId) =>
-      _cart.any((item) => item.product.id == productId);
+      _cart.any((i) => i.product.id == productId);
 
   void addToCart(Product product) {
     setState(() {
-      final index = _cart.indexWhere((i) => i.product.id == product.id);
-      if (index != -1) {
-        _cart[index].quantity++;
+      final idx = _cart.indexWhere((i) => i.product.id == product.id);
+      if (idx != -1) {
+        _cart[idx].quantity++;
       } else {
         _cart.add(CartItem(product: product));
       }
@@ -84,27 +93,25 @@ class _BananaShopAppState extends State<BananaShopApp> {
 
   void incrementQuantity(String productId) {
     setState(() {
-      final index = _cart.indexWhere((i) => i.product.id == productId);
-      if (index != -1) _cart[index].quantity++;
+      final idx = _cart.indexWhere((i) => i.product.id == productId);
+      if (idx != -1) _cart[idx].quantity++;
     });
   }
 
   void decrementQuantity(String productId) {
     setState(() {
-      final index = _cart.indexWhere((i) => i.product.id == productId);
-      if (index != -1) {
-        if (_cart[index].quantity > 1) {
-          _cart[index].quantity--;
+      final idx = _cart.indexWhere((i) => i.product.id == productId);
+      if (idx != -1) {
+        if (_cart[idx].quantity > 1) {
+          _cart[idx].quantity--;
         } else {
-          _cart.removeAt(index);
+          _cart.removeAt(idx);
         }
       }
     });
   }
 
-  void clearCart() {
-    setState(() => _cart.clear());
-  }
+  void clearCart() => setState(() => _cart.clear());
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +119,6 @@ class _BananaShopAppState extends State<BananaShopApp> {
       title: 'Banana Mart',
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
-      // Single ThemeData applied at MaterialApp level
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,

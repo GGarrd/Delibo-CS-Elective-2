@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/product.dart';
 
-// StatelessWidget: a product card's display never changes after being built
+// ── ProductCard ───────────────────────────────────────────────────────────────
+// StatelessWidget: displays a single product in the grid.
+// No state lives here — it just renders what it's given and handles a tap.
 class ProductCard extends StatelessWidget {
   final Product product;
 
@@ -13,73 +15,72 @@ class ProductCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: () => context.push('/product/${product.id}'),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
+      onTap: () {
+        // Pass the full Product object as `extra` so ProductDetailScreen
+        // doesn't have to re-fetch from Supabase just to show details.
+        context.push('/product/${product.id}', extra: product);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product image (emoji on colored background)
-            Container(
-              width: double.infinity,
-              height: 110,
-              color: product.bgColor,
-              child: Center(
-                child: Text(
-                  product.emoji,
-                  style: const TextStyle(fontSize: 56),
+            // ── Emoji hero area ──────────────────────────────────────────────
+            Expanded(
+              flex: 3,
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Container(
+                  width: double.infinity,
+                  color: product.bgColor,
+                  child: Center(
+                    child: Text(
+                      product.emoji,
+                      style: const TextStyle(fontSize: 52),
+                    ),
+                  ),
                 ),
               ),
             ),
 
-            // Product info
+            // ── Info section ─────────────────────────────────────────────────
             Expanded(
+              flex: 2,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Product name
                     Text(
                       product.name,
-                      style: theme.textTheme.titleMedium?.copyWith(fontSize: 13),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Category badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: product.bgColor.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            product.category,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.secondary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-
-                        // Price — uses colorScheme.tertiary (defined in AppTheme)
-                        // No isDark check needed: tertiary is darkBrown in light, bananaYellow in dark
-                        Text(
-                          '₱${product.price.toStringAsFixed(0)}',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontSize: 15,
-                            color: theme.colorScheme.tertiary,
-                          ),
-                        ),
-                      ],
+                    const Spacer(),
+                    // Price — uses colorScheme.tertiary (set in AppTheme for
+                    // both light and dark; NO isDark check needed here)
+                    Text(
+                      '₱${product.price.toStringAsFixed(2)}',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.tertiary,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),
