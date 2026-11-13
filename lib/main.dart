@@ -7,12 +7,48 @@ import 'models/cart_item.dart';
 import 'screens/cart_screen.dart';
 import 'screens/checkout_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/product_detail_screen.dart';
 import 'theme/app_theme.dart';
 
+// ── Auth state notifier ───────────────────────────────────────────────────────
+// Listens to Supabase auth changes and notifies GoRouter to re-evaluate
+// its redirect rules whenever the user logs in or out.
+class _AuthNotifier extends ChangeNotifier {
+  _AuthNotifier() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  bool get isLoggedIn =>
+      Supabase.instance.client.auth.currentSession != null;
+}
+
+final _authNotifier = _AuthNotifier();
+
 // ── Navigation 2.0: GoRouter ──────────────────────────────────────────────────
 final _router = GoRouter(
+  refreshListenable: _authNotifier,  // re-runs redirect on auth change
+  initialLocation: '/',
+  redirect: (context, state) {
+    final loggedIn   = _authNotifier.isLoggedIn;
+    final onLogin    = state.matchedLocation == '/login';
+
+    // Not logged in and not already on login page → send to login
+    if (!loggedIn && !onLogin) return '/login';
+
+    // Already logged in but landed on login page → send to home
+    if (loggedIn && onLogin) return '/';
+
+    // No redirect needed
+    return null;
+  },
   routes: [
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
     GoRoute(
       path: '/',
       builder: (context, state) => const HomeScreen(),
@@ -20,7 +56,7 @@ final _router = GoRouter(
     GoRoute(
       path: '/product/:id',
       builder: (context, state) {
-        // Product is passed as extra to avoid re-fetching from Supabase
+        // Product passed as extra to avoid re-fetching from Supabase
         final product = state.extra as Product;
         return ProductDetailScreen(product: product);
       },
@@ -41,7 +77,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url:    SupabaseConfig.url,
+    url:     SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
 
@@ -73,9 +109,9 @@ class _BananaShopAppState extends State<BananaShopApp> {
   // ── Cart state ──────────────────────────────────────────────────────────────
   final List<CartItem> _cart = [];
 
-  List<CartItem> get cartItems => List.unmodifiable(_cart);
-  int    get cartCount => _cart.fold(0, (sum, i) => sum + i.quantity);
-  double get cartTotal => _cart.fold(0.0, (sum, i) => sum + i.subtotal);
+  List<CartItem> get cartItems  => List.unmodifiable(_cart);
+  int    get cartCount          => _cart.fold(0, (sum, i) => sum + i.quantity);
+  double get cartTotal          => _cart.fold(0.0, (sum, i) => sum + i.subtotal);
 
   bool isInCart(String productId) =>
       _cart.any((i) => i.product.id == productId);
@@ -113,15 +149,22 @@ class _BananaShopAppState extends State<BananaShopApp> {
 
   void clearCart() => setState(() => _cart.clear());
 
+  // ── Sign out ─────────────────────────────────────────────────────────────────
+  Future<void> signOut() async {
+    clearCart();
+    await Supabase.instance.client.auth.signOut();
+    // _authNotifier fires → GoRouter redirects to /login automatically
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Banana Mart',
+      title:                   'Banana Mart',
       debugShowCheckedModeBanner: false,
-      routerConfig: _router,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: _themeMode,
+      routerConfig:            _router,
+      theme:                   AppTheme.light,
+      darkTheme:               AppTheme.dark,
+      themeMode:               _themeMode,
     );
   }
 }

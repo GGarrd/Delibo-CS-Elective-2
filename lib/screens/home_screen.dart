@@ -123,6 +123,12 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
             onPressed: () => app.toggleTheme(),
           ),
+          // Sign out
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign out',
+            onPressed: () => app.signOut(),
+          ),
           const SizedBox(width: 4),
         ],
       ),
